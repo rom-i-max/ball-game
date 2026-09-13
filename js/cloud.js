@@ -18,18 +18,36 @@ class Cloud extends Entity {
         this.puffs = this._generatePuffs();
     }
 
-    /** Случайная конфигурация «пузырей» из 3–4 кругов */
+    /** Случайная конфигурация «пузырей» для процедурного облака */
     _generatePuffs() {
-        const count = 3 + Math.floor(Math.random() * 2); // 3 или 4
         const puffs = [];
-        const baseR = 30 * this.scale;
-        for (let i = 0; i < count; i++) {
-            puffs.push({
-                dx: (i - (count - 1) / 2) * baseR * 0.9 + (Math.random() - 0.5) * 10,
-                dy: (Math.random() - 0.5) * baseR * 0.6,
-                r: baseR * (0.7 + Math.random() * 0.6),
-            });
+        const baseRadiusX = (60 + Math.random() * 20) * this.scale; 
+        const baseRadiusY = (35 + Math.random() * 15) * this.scale;   
+        
+        const steps = 14; 
+        
+        for (let i = 0; i < steps; i++) {
+            const angle = (i / steps) * Math.PI * 2;
+            
+            const ex = baseRadiusX * Math.cos(angle);
+            const ey = baseRadiusY * Math.sin(angle);
+            
+            const t = Math.atan2(ey * baseRadiusX, ex * baseRadiusY);
+            const localScale = Math.sqrt(Math.pow(baseRadiusX * Math.sin(t), 2) + Math.pow(baseRadiusY * Math.cos(t), 2)) / Math.max(baseRadiusX, baseRadiusY);
+            
+            const r = (baseRadiusY * 0.55) + (localScale * baseRadiusY * 0.25) + (Math.random() - 0.5) * 5;
+            
+            const inset = 0.15; 
+            const cx = ex * (1 - inset);
+            const cy = ey * (1 - inset);
+
+            puffs.push({ dx: cx, dy: cy, r: r });
         }
+
+        puffs.push({ dx: 0, dy: 0, r: baseRadiusY * 0.9 });
+        puffs.push({ dx: -baseRadiusX * 0.3, dy: 0, r: baseRadiusY * 0.7 });
+        puffs.push({ dx: baseRadiusX * 0.3, dy: 0, r: baseRadiusY * 0.7 });
+        
         return puffs;
     }
 
