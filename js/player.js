@@ -1,28 +1,13 @@
 /**
  * Игрок — круглый мяч с физикой гравитации и прыжка.
+ * С спрайтовой анимацией.
  */
 class Player extends Entity {
     /**
      * @param {number} x
      * @param {number} y
      */
-/* конструктор - первая версия 
-
-	constructor(x, y) {
-        const radius = 20;
-        super(x - radius, y - radius, radius * 2, radius * 2);
-        this.radius = radius;
-        this.isGrounded = false;
-
-        // Параметры физики
-        this.gravity = 0.65;
-        this.jumpImpulse = -12;
-        this.maxSpeed = 6;
-        this.acceleration = 0.6;
-        this.friction = 0.82;
-    }
-*/
-	    constructor(x, y) {
+    constructor(x, y) {
         const cfg = (window.CONFIG && window.CONFIG.player) || {};
         const ph  = (window.CONFIG && window.CONFIG.physics) || {};
         const radius = cfg.radius || 20;
@@ -44,8 +29,15 @@ class Player extends Entity {
         this.blinkIntervalMs = cfg.damageBlinkIntervalMs ?? 90;
         this.pulseScaleMin = cfg.damagePulseScaleMin ?? 0.85;
         this.pulseScaleMax = cfg.damagePulseScaleMax ?? 1.15;
+
+        // Спрайтовый аниматор
+        this.animator = new SpriteAnimator('assets/player.png', 'assets/player.json');
+        
+        // Состояния анимации
+        this.facingRight = true;
+        this.lastMoveTime = 0;
     }
-	
+
     /**
      * @param {number} dt
      * @param {Input} input
@@ -53,11 +45,17 @@ class Player extends Entity {
      * @param {Platform[]} platforms
      */
     update(dt, input, terrain, platforms = []) {
+        const wasGrounded = this.isGrounded;
+
         // Горизонтальное управление
         if (input.keys.left) {
             this.vx -= this.acceleration * dt;
+            this.facingRight = false;
+            this.lastMoveTime = Date.now();
         } else if (input.keys.right) {
             this.vx += this.acceleration * dt;
+            this.facingRight = true;
+            this.lastMoveTime = Date.now();
         } else {
             this.vx *= Math.pow(this.friction, dt);
         }
@@ -72,7 +70,7 @@ class Player extends Entity {
         // Гравитация
         this.vy += this.gravity * dt;
         // Ограничение падения
-        this.vy = Math.min(this.vy, 18);
+        this.vy = Math.min(this.vy, this.maxFallSpeed);
 
         // Перемещение
         this.x += this.vx * dt;
@@ -105,42 +103,108 @@ class Player extends Entity {
                 this.isGrounded = true;
             }
         }
+
+        // Обновление анимации
+        this._updateAnimation(dt);
     }
 
+    /**
+     * Выбор и обновление анимации в зависимости от состояния
+     * @param {number} dt
+     */
+    _updateAnimation(dt) {
+        const moving = Math.abs(this.vx) > 0.5;
+        const inAir = !this.isGrounded;
+        const idleTime = Date.now() - this.lastMoveTime;
+
+        if (inAir) {
+            // В воздухе - используем choke (сжатие) или можно добавить отдельную anim
+            this.animator.setAnimation('choke', true);
+        } else if (moving) {
+            // Движение по земле - roll
+            this.animator.setAnimation('roll', true);
+        } else if (idleTime > 2000) {
+            // Долгий простой - bored или look_around
+            this.animator.setAnimation('bored', true);
+        } else {
+            // Стоим на месте
+            this.animator.setAnimation('look_around', true);
+        }
+
+        this.animator.update(dt);
+    }
+
+    /**
+     * Отрисовка игрока со спрайтом и динамической тенью
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} cameraX
+     */
     draw(ctx, cameraX) {
         const screenX = this.x - cameraX + this.radius;
         const screenY = this.y + this.radius;
+        const colors = (window.CONFIG && window.CONFIG.colors) || {};
+        const shadowCfg = colors.shadow || {};
 
-        // Тень
+        // Вычисляем высоту над "землёй" для тени
+        const groundY = this.isGrounded ? 
+            screenY + this.radius : 
+            this.y + this.height;
+        
+        const heightAboveGround = Math.max(0, groundY - (screenY + this.radius));
+        
+        // Тень: размытие и размер зависят от высоты
+        const shadowBlurBase = shadowCfg.blurBase ?? 4;
+        const shadowBlurMax = shadowCfg.blurMax ?? 15;
+        const shadowScale = Math.max(0.3, 1 - heightAboveGround / 200);
+        const shadowBlur = shadowBlurBase + (shadowBlurMax - shadowBlurBase) * (heightAboveGround / 150);
+        const shadowAlpha = 0.25 * shadowScale;
+
+        // Рисуем тень на поверхности (земля или платформа)
+        ctx.save();
+        ctx.filter = `blur(${shadowBlur}px)`;
         ctx.beginPath();
-        ctx.ellipse(screenX, screenY + this.radius + 4, this.radius * 0.9, 4, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.fill();
-
-        // Тело мяча с радиальным градиентом
-        const grad = ctx.createRadialGradient(
-            screenX - this.radius * 0.3,
-            screenY - this.radius * 0.3,
-            this.radius * 0.15,
-            screenX,
-            screenY,
-            this.radius
+        ctx.ellipse(
+            screenX, 
+            groundY, 
+            this.radius * 0.9 * shadowScale, 
+            4 * shadowScale, 
+            0, 0, Math.PI * 2
         );
-        grad.addColorStop(0, '#ff8c66');
-        grad.addColorStop(1, '#e63946');
-
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
+        ctx.fillStyle = shadowCfg.color || `rgba(0, 0, 0, ${shadowAlpha})`;
         ctx.fill();
-        ctx.strokeStyle = '#a4161a';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.restore();
 
-        // Блик
-        ctx.beginPath();
-        ctx.arc(screenX - this.radius * 0.35, screenY - this.radius * 0.35, this.radius * 0.22, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fill();
+        // Отрисовка спрайта
+        const scaleX = this.facingRight ? 1 : -1;
+        this.animator.draw(ctx, screenX, screenY, scaleX);
+
+        // Fallback: если спрайт не загрузился, рисуем градиентный круг
+        if (!this.animator.isReady()) {
+            // Тело мяча с радиальным градиентом
+            const grad = ctx.createRadialGradient(
+                screenX - this.radius * 0.3,
+                screenY - this.radius * 0.3,
+                this.radius * 0.15,
+                screenX,
+                screenY,
+                this.radius
+            );
+            grad.addColorStop(0, '#ff8c66');
+            grad.addColorStop(1, '#e63946');
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = '#a4161a';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Блик
+            ctx.beginPath();
+            ctx.arc(screenX - this.radius * 0.35, screenY - this.radius * 0.35, this.radius * 0.22, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fill();
+        }
     }
 }

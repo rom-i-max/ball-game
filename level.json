@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "name": "Test Level 1",
+    "author": "Developer",
+    "version": "1.0"
+  },
+  "platforms": [
+    {"x": 400, "y": 420, "width": 150, "height": 20},
+    {"x": 650, "y": 380, "width": 120, "height": 20},
+    {"x": 900, "y": 340, "width": 180, "height": 20},
+    {"x": 1200, "y": 400, "width": 140, "height": 20},
+    {"x": 1500, "y": 350, "width": 160, "height": 20},
+    {"x": 1800, "y": 300, "width": 130, "height": 20},
+    {"x": 2100, "y": 380, "width": 170, "height": 20},
+    {"x": 2400, "y": 320, "width": 150, "height": 20},
+    {"x": 2700, "y": 360, "width": 140, "height": 20},
+    {"x": 3000, "y": 300, "width": 180, "height": 20}
+  ],
+  "loots": [
+    {"x": 475, "y": 380, "value": 10},
+    {"x": 710, "y": 340, "value": 15},
+    {"x": 990, "y": 300, "value": 20},
+    {"x": 1270, "y": 360, "value": 10},
+    {"x": 1580, "y": 310, "value": 25},
+    {"x": 1860, "y": 260, "value": 15},
+    {"x": 2185, "y": 340, "value": 20},
+    {"x": 2475, "y": 280, "value": 30},
+    {"x": 2770, "y": 320, "value": 15},
+    {"x": 3090, "y": 260, "value": 50}
+  ],
+  "enemies": [
+    {"x": 500, "patrolRange": 80},
+    {"x": 950, "patrolRange": 100},
+    {"x": 1550, "patrolRange": 90},
+    {"x": 2150, "patrolRange": 110},
+    {"x": 2750, "patrolRange": 85}
+  ],
+  "interactables": [
+    {"x": 600, "y": 400, "type": "crate", "properties": {"health": 3}},
+    {"x": 1100, "y": 380, "type": "crate", "properties": {"health": 2}},
+    {"x": 1700, "y": 330, "type": "barrel", "properties": {}},
+    {"x": 2300, "y": 300, "type": "switch", "properties": {}},
+    {"x": 2900, "y": 280, "type": "crate", "properties": {"health": 5}}
+  ]
+}
