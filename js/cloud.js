@@ -42,13 +42,15 @@ class Cloud extends Entity {
     draw(ctx, cameraX) {
         const screenX = this.x - cameraX * this.parallaxFactor;
         ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = '#ffffff';
-        for (const p of this.puffs) {
-            ctx.beginPath();
+        // Рисуем всё облако как единый белый силуэт
+        ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+        ctx.beginPath();
+        for (let i = 0; i < this.puffs.length; i++) {
+            const p = this.puffs[i];
+            ctx.moveTo(screenX + p.dx + p.r, this.y + p.dy);
             ctx.arc(screenX + p.dx, this.y + p.dy, p.r, 0, Math.PI * 2);
-            ctx.fill();
         }
+        ctx.fill();
         ctx.restore();
     }
 }
