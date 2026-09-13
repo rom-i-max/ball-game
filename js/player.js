@@ -36,6 +36,13 @@ class Player extends Entity {
         // Состояния анимации
         this.facingRight = true;
         this.lastMoveTime = 0;
+        
+        // Угол вращения для эффекта качения
+        this.rotation = 0;
+        
+        // Фиксированный кадр: строка 3 (y=126), первый кадр (frame 0 из bored)
+        // Используем данные из player.json: x=0, y=126, width=64, height=64
+        this.fixedFrame = { x: 0, y: 126, width: 64, height: 64 };
     }
 
     /**
@@ -104,34 +111,28 @@ class Player extends Entity {
             }
         }
 
-        // Обновление анимации
-        this._updateAnimation(dt);
+        // Обновление вращения персонажа (пропорционально скорости и диаметру)
+        this._updateRotation(dt);
     }
 
     /**
-     * Выбор и обновление анимации в зависимости от состояния
+     * Обновление угла вращения для эффекта качения
      * @param {number} dt
      */
-    _updateAnimation(dt) {
-        const moving = Math.abs(this.vx) > 0.5;
-        const inAir = !this.isGrounded;
-        const idleTime = Date.now() - this.lastMoveTime;
-
-        if (inAir) {
-            // В воздухе - используем choke (сжатие) или можно добавить отдельную anim
-            this.animator.setAnimation('choke', true);
-        } else if (moving) {
-            // Движение по земле - roll
-            this.animator.setAnimation('roll', true);
-        } else if (idleTime > 2000) {
-            // Долгий простой - bored или look_around
-            this.animator.setAnimation('bored', true);
-        } else {
-            // Стоим на месте
-            this.animator.setAnimation('look_around', true);
+    _updateRotation(dt) {
+        // Длина окружности = 2 * π * r
+        const circumference = 2 * Math.PI * this.radius;
+        // Пройденное расстояние за кадр
+        const distanceMoved = Math.abs(this.vx) * dt;
+        // Угол вращения в радианах: пройденное расстояние / длина окружности * 2π
+        const rotationDelta = (distanceMoved / circumference) * 2 * Math.PI;
+        
+        // Направление вращения зависит от направления движения
+        if (this.vx > 0) {
+            this.rotation += rotationDelta;
+        } else if (this.vx < 0) {
+            this.rotation -= rotationDelta;
         }
-
-        this.animator.update(dt);
     }
 
     /**
@@ -174,11 +175,62 @@ class Player extends Entity {
         ctx.fill();
         ctx.restore();
 
-        // Отрисовка спрайта
+        // Отрисовка спрайта с вращением
         const scaleX = this.facingRight ? 1 : -1;
-        this.animator.draw(ctx, screenX, screenY, scaleX);
-
+        this._drawFixedFrame(ctx, screenX, screenY, scaleX);
+        
         // Fallback: если спрайт не загрузился, рисуем градиентный круг
+        this._drawFallback(ctx, screenX, screenY);
+    }
+
+    /**
+     * Отрисовка фиксированного кадра с вращением
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} screenX - центр по X
+     * @param {number} screenY - центр по Y
+     * @param {number} scaleX - масштаб по X (для отражения)
+     */
+    _drawFixedFrame(ctx, screenX, screenY, scaleX) {
+        if (!this.animator.isReady()) {
+            return;
+        }
+
+        const frame = this.fixedFrame;
+        const targetSize = 40;
+        const scale = targetSize / Math.max(frame.width, frame.height);
+        const drawWidth = frame.width * scale;
+        const drawHeight = frame.height * scale;
+
+        ctx.save();
+        
+        // Перемещаем контекст к центру персонажа
+        ctx.translate(screenX, screenY);
+        
+        // Отражение по горизонтали если нужно
+        if (scaleX < 0) {
+            ctx.scale(-1, 1);
+        }
+        
+        // Вращение для эффекта качения
+        ctx.rotate(this.rotation);
+        
+        // Рисуем спрайт центрированным
+        ctx.drawImage(
+            this.animator.image,
+            frame.x, frame.y, frame.width, frame.height,
+            -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight
+        );
+        
+        ctx.restore();
+    }
+
+    /**
+     * Fallback: если спрайт не загрузился, рисуем градиентный круг
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} screenX
+     * @param {number} screenY
+     */
+    _drawFallback(ctx, screenX, screenY) {
         if (!this.animator.isReady()) {
             // Тело мяча с радиальным градиентом
             const grad = ctx.createRadialGradient(
