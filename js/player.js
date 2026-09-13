@@ -122,17 +122,13 @@ class Player extends Entity {
     _updateRotation(dt) {
         // Длина окружности = 2 * π * r
         const circumference = 2 * Math.PI * this.radius;
-        // Пройденное расстояние за кадр
-        const distanceMoved = Math.abs(this.vx) * dt;
+        // Пройденное расстояние за кадр (со знаком для направления)
+        const distanceMoved = this.vx * dt;
         // Угол вращения в радианах: пройденное расстояние / длина окружности * 2π
-        const rotationDelta = (distanceMoved / circumference) * 2 * Math.PI;
+        // Упрощаем: (distanceMoved / (2 * π * r)) * 2π = distanceMoved / r
+        const rotationDelta = distanceMoved / this.radius;
         
-        // Направление вращения зависит от направления движения
-        if (this.vx > 0) {
-            this.rotation += rotationDelta;
-        } else if (this.vx < 0) {
-            this.rotation -= rotationDelta;
-        }
+        this.rotation += rotationDelta;
     }
 
     /**
@@ -158,9 +154,9 @@ class Player extends Entity {
         const shadowBlurMax = shadowCfg.blurMax ?? 15;
         const shadowScale = Math.max(0.3, 1 - heightAboveGround / 200);
         const shadowBlur = shadowBlurBase + (shadowBlurMax - shadowBlurBase) * (heightAboveGround / 150);
-        const shadowAlpha = 0.25 * shadowScale;
+        const shadowAlpha = 0.4 * shadowScale; // Сделали тень темнее (было 0.25)
 
-        // Рисуем тень на поверхности (земля или платформа)
+        // Рисуем тень на поверхности (земля или платформа) - отдельно от персонажа
         ctx.save();
         ctx.filter = `blur(${shadowBlur}px)`;
         ctx.beginPath();
@@ -171,13 +167,12 @@ class Player extends Entity {
             4 * shadowScale, 
             0, 0, Math.PI * 2
         );
-        ctx.fillStyle = shadowCfg.color || `rgba(0, 0, 0, ${shadowAlpha})`;
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
         ctx.fill();
         ctx.restore();
 
-        // Отрисовка спрайта с вращением
-        const scaleX = this.facingRight ? 1 : -1;
-        this._drawFixedFrame(ctx, screenX, screenY, scaleX);
+        // Отрисовка спрайта с вращением (без отражения, только вращение)
+        this._drawFixedFrame(ctx, screenX, screenY);
         
         // Fallback: если спрайт не загрузился, рисуем градиентный круг
         this._drawFallback(ctx, screenX, screenY);
@@ -188,9 +183,8 @@ class Player extends Entity {
      * @param {CanvasRenderingContext2D} ctx
      * @param {number} screenX - центр по X
      * @param {number} screenY - центр по Y
-     * @param {number} scaleX - масштаб по X (для отражения)
      */
-    _drawFixedFrame(ctx, screenX, screenY, scaleX) {
+    _drawFixedFrame(ctx, screenX, screenY) {
         if (!this.animator.isReady()) {
             return;
         }
@@ -206,12 +200,7 @@ class Player extends Entity {
         // Перемещаем контекст к центру персонажа
         ctx.translate(screenX, screenY);
         
-        // Отражение по горизонтали если нужно
-        if (scaleX < 0) {
-            ctx.scale(-1, 1);
-        }
-        
-        // Вращение для эффекта качения
+        // Вращение для эффекта качения (без отражения)
         ctx.rotate(this.rotation);
         
         // Рисуем спрайт центрированным
