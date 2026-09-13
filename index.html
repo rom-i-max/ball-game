@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Платформер — Прототип</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="hud">
+            <div class="hud__item">
+                <span class="hud__label">Очки:</span>
+                <span class="hud__value" id="score">0</span>
+            </div>
+            <div class="hud__item">
+                <span class="hud__label">Убито врагов:</span>
+                <span class="hud__value" id="kills">0</span>
+            </div>
+            <div class="hud__item">
+                <span class="hud__label">Жизни:</span>
+                <span class="hud__value" id="lives">3</span>
+            </div>
+        </div>
+
+        <canvas id="game" width="900" height="600"></canvas>
+
+        <div class="controls">
+            <p><strong>Управление:</strong> ← → — движение, Пробел / ↑ — прыжок, R — рестарт</p>
+        </div>
+
+        <div class="overlay hidden" id="overlay">
+            <div class="overlay__content">
+                <h1 class="overlay__title" id="overlayTitle">Игра окончена</h1>
+                <p class="overlay__text" id="overlayText">Нажмите R для перезапуска</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Порядок подключения важен: классы → генераторы → игровой цикл -->
+    <script src="js/config.js"></script>  <!-- <<<< добавлен конфиг -->
+	<script src="js/entity.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/cloud.js"></script>
+    <script src="js/terrain.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/loot.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/platform.js"></script>
+    <script src="js/chunk-generator.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
