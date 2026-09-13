@@ -19,6 +19,8 @@ class Game {
 
     /** Инициализация состояния (используется и для рестарта) */
     async _init() {
+        this.isLoading = true; // Блокируем update до завершения загрузки
+        
         const w = (window.CONFIG && window.CONFIG.world) || {};
         const pl = (window.CONFIG && window.CONFIG.player) || {};
         const cam = (window.CONFIG && window.CONFIG.camera) || {};
@@ -58,6 +60,8 @@ class Game {
 
         this._updateHUD();
         this._hideOverlay();
+        
+        this.isLoading = false; // Разрешаем update
     }
 
     /**
@@ -126,6 +130,9 @@ class Game {
      * @param {number} dt
      */
     update(dt) {
+        // Блокируем обновление во время загрузки
+        if (this.isLoading) return;
+        
         if (this.gameOver) {
             // Разрешаем рестарт через R
             if (this.input.restartRequested) {
@@ -137,22 +144,26 @@ class Game {
 
         // Проверка завершения уровня
         const levelLength = (window.CONFIG && window.CONFIG.world && window.CONFIG.world.levelLength) || 5000;
-        if (this.player.x > levelLength && !this.levelFinished) {
+        if (this.player && this.player.x > levelLength && !this.levelFinished) {
             this.levelFinished = true;
             this._levelComplete();
         }
 
         // 1) Игрок
-        const platforms = this.levelData ? this.platforms : this.chunkGen.platforms;
-        this.player.update(dt, this.input, this.terrain, platforms);
+        const platforms = this.levelData ? this.platforms : (this.chunkGen && this.chunkGen.platforms);
+        if (this.player) {
+            this.player.update(dt, this.input, this.terrain, platforms || []);
+        }
 
         // 2) Камера
-        this.prevCameraX = this.camera.x;
-        this.camera.update(this.player);
-        const cameraDX = this.camera.x - this.prevCameraX;
+        if (this.camera) {
+            this.prevCameraX = this.camera.x;
+            this.camera.update(this.player);
+            const cameraDX = this.camera.x - this.prevCameraX;
 
-        // 3) Облака
-        this.clouds.update(dt, cameraDX, this.camera.x);
+            // 3) Облака
+            this.clouds.update(dt, cameraDX, this.camera.x);
+        }
 
         if (this.levelData) {
             // Статический уровень из JSON
@@ -187,7 +198,7 @@ class Game {
                     // Обработка взаимодействия
                 }
             }
-        } else {
+        } else if (this.chunkGen) {
             // Процедурный уровень (чанк-генератор)
             // 4) Чанки: догружаем впереди, чистим позади
             this.chunkGen.ensureChunks(this.camera.x, this.width);
@@ -219,7 +230,7 @@ class Game {
         }
 
         // 7) Падение вниз (если игрок как-то улетел под карту)
-        if (this.player.y > this.height + 400) {
+        if (this.player && this.player.y > this.height + 400) {
             this._onPlayerDamage();
         }
 
