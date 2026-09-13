@@ -1,9 +1,5 @@
-Thumbs.db
-Desktop.ini
-.DS_Store
-.vscode
-.idea
-.swp
-~
-.log
-node_modules
+(js/interactable.js, js/sprite-animator.js, level.json)
+
+(config.json, index.html, js/game.js, js/player.js, js/terrain.js)
+
+(empty)
