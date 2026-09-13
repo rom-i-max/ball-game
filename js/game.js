@@ -149,14 +149,16 @@ class Game {
             this._levelComplete();
         }
 
-        // 1) Игрок
-        const platforms = this.levelData ? this.platforms : (this.chunkGen && this.chunkGen.platforms);
+        // Получаем платформы в зависимости от типа уровня
+        const platforms = this.levelData ? this.platforms : (this.chunkGen ? this.chunkGen.platforms : []);
+        
+        // 1) Игрок — только если существует
         if (this.player) {
-            this.player.update(dt, this.input, this.terrain, platforms || []);
+            this.player.update(dt, this.input, this.terrain, platforms);
         }
 
-        // 2) Камера
-        if (this.camera) {
+        // 2) Камера — только если существует
+        if (this.camera && this.player) {
             this.prevCameraX = this.camera.x;
             this.camera.update(this.player);
             const cameraDX = this.camera.x - this.prevCameraX;
@@ -170,7 +172,7 @@ class Game {
             // Лут
             for (const loot of this.loots) {
                 loot.update(dt);
-                if (loot.checkCollect(this.player)) {
+                if (this.player && loot.checkCollect(this.player)) {
                     this.score += loot.value;
                 }
             }
@@ -178,23 +180,25 @@ class Game {
             // Враги
             for (const enemy of this.enemies) {
                 enemy.update(dt);
-                const result = enemy.checkCollision(this.player);
-                
-                if (result === 'kill') {
-                    const ph = (window.CONFIG && window.CONFIG.physics) || {};
-                    const en = (window.CONFIG && window.CONFIG.enemy) || {};
-                    this.kills += 1;
-                    this.score += en.scoreValue ?? 25;
-                    this.player.vy = ph.killBounceImpulse ?? -8;
-                } else if (result === 'damage') {
-                    this._onPlayerDamage();
+                if (this.player) {
+                    const result = enemy.checkCollision(this.player);
+                    
+                    if (result === 'kill') {
+                        const ph = (window.CONFIG && window.CONFIG.physics) || {};
+                        const en = (window.CONFIG && window.CONFIG.enemy) || {};
+                        this.kills += 1;
+                        this.score += en.scoreValue ?? 25;
+                        this.player.vy = ph.killBounceImpulse ?? -8;
+                    } else if (result === 'damage') {
+                        this._onPlayerDamage();
+                    }
                 }
             }
 
             // Интерактивные объекты
             for (const obj of this.interactables) {
                 obj.update(dt, this.player);
-                if (obj.interact(this.player)) {
+                if (this.player && obj.interact(this.player)) {
                     // Обработка взаимодействия
                 }
             }
@@ -207,7 +211,7 @@ class Game {
             // 5) Лут
             for (const loot of this.chunkGen.loots) {
                 loot.update(dt);
-                if (loot.checkCollect(this.player)) {
+                if (this.player && loot.checkCollect(this.player)) {
                     this.score += loot.value;
                 }
             }
@@ -215,16 +219,18 @@ class Game {
             // 6) Враги
             for (const enemy of this.chunkGen.enemies) {
                 enemy.update(dt);
-                const result = enemy.checkCollision(this.player);
-                
-                if (result === 'kill') {
-                    const ph = (window.CONFIG && window.CONFIG.physics) || {};
-                    const en = (window.CONFIG && window.CONFIG.enemy) || {};
-                    this.kills += 1;
-                    this.score += en.scoreValue ?? 25;
-                    this.player.vy = ph.killBounceImpulse ?? -8;
-                } else if (result === 'damage') {
-                    this._onPlayerDamage();
+                if (this.player) {
+                    const result = enemy.checkCollision(this.player);
+                    
+                    if (result === 'kill') {
+                        const ph = (window.CONFIG && window.CONFIG.physics) || {};
+                        const en = (window.CONFIG && window.CONFIG.enemy) || {};
+                        this.kills += 1;
+                        this.score += en.scoreValue ?? 25;
+                        this.player.vy = ph.killBounceImpulse ?? -8;
+                    } else if (result === 'damage') {
+                        this._onPlayerDamage();
+                    }
                 }
             }
         }
@@ -271,6 +277,14 @@ class Game {
 
     /** Отрисовка кадра */
     draw() {
+        // Если идёт загрузка — не рисуем ничего кроме фона
+        if (this.isLoading) {
+            const colors = (window.CONFIG && window.CONFIG.colors) || {};
+            this._drawSky(colors.sky);
+            this._drawSun(colors.sun);
+            return;
+        }
+        
         const colors = (window.CONFIG && window.CONFIG.colors) || {};
         
         this._drawSky(colors.sky);
@@ -279,25 +293,27 @@ class Game {
         this.terrain.draw(this.ctx, this.camera.x);
 
         // Платформы
-        const platforms = this.levelData ? this.platforms : this.chunkGen.platforms;
+        const platforms = this.levelData ? this.platforms : (this.chunkGen ? this.chunkGen.platforms : []);
         for (const p of platforms) {
             p.draw(this.ctx, this.camera.x, colors.platform);
         }
 
         // Лут
-        const loots = this.levelData ? this.loots : this.chunkGen.loots;
+        const loots = this.levelData ? this.loots : (this.chunkGen ? this.chunkGen.loots : []);
         for (const l of loots) {
             l.draw(this.ctx, this.camera.x);
         }
 
         // Враги
-        const enemies = this.levelData ? this.enemies : this.chunkGen.enemies;
+        const enemies = this.levelData ? this.enemies : (this.chunkGen ? this.chunkGen.enemies : []);
         for (const e of enemies) {
             e.draw(this.ctx, this.camera.x);
         }
 
-        // Игрок
-        this.player.draw(this.ctx, this.camera.x);
+        // Игрок — только если существует
+        if (this.player) {
+            this.player.draw(this.ctx, this.camera.x);
+        }
     }
 
     /** Небо — вертикальный градиент */
