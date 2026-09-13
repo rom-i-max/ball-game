@@ -1,5 +1,27 @@
-(js/interactable.js, js/sprite-animator.js, level.json)
+```
+# Logs and temp files
+*.log
+*.tmp
+*.swp
 
-(config.json, index.html, js/game.js, js/player.js, js/terrain.js)
+# Environment
+.env
+.env.local
+*.env.*
 
-(empty)
+# Editors
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+.nyc_output/
+```

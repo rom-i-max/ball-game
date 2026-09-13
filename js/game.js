@@ -18,7 +18,7 @@ class Game {
     }
 
     /** Инициализация состояния (используется и для рестарта) */
-    _init() {
+    async _init() {
         const w = (window.CONFIG && window.CONFIG.world) || {};
         const pl = (window.CONFIG && window.CONFIG.player) || {};
         const cam = (window.CONFIG && window.CONFIG.camera) || {};
@@ -30,13 +30,17 @@ class Game {
         // Загружаем уровень из JSON или используем чанк-генератор как fallback
         this.levelData = null;
         this.chunkGen = null;
+        this.platforms = [];
+        this.loots = [];
+        this.enemies = [];
+        this.interactables = [];
         
-        this._loadLevel().then(() => {
-            if (!this.levelData) {
-                // Fallback на чанк-генератор
-                this.chunkGen = new ChunkGenerator(this.terrain);
-            }
-        });
+        await this._loadLevel();
+        
+        if (!this.levelData) {
+            // Fallback на чанк-генератор
+            this.chunkGen = new ChunkGenerator(this.terrain);
+        }
 
         const startY = this.terrain.getHeightAt(300) - 40;
         this.player = new Player(300, startY);
@@ -89,7 +93,17 @@ class Game {
             }
             if (this.levelData.enemies) {
                 for (const e of this.levelData.enemies) {
-                    this.enemies.push(new Enemy(e.x, e.patrolRange || 90, this.terrain));
+                    // Вычисляем Y для врага на основе terrain или платформы
+                    let enemyY = this.terrain.getHeightAt(e.x) - 24;
+                    // Проверяем, есть ли платформа под врагом
+                    for (const p of this.platforms) {
+                        if (e.x >= p.x && e.x <= p.x + p.width && 
+                            p.y < enemyY + 24 && p.y > enemyY - 50) {
+                            enemyY = p.y - 24;
+                            break;
+                        }
+                    }
+                    this.enemies.push(new Enemy(e.x, enemyY, e.patrolRange || 90, this.terrain, this.platforms));
                 }
             }
             if (this.levelData.interactables) {
@@ -103,8 +117,8 @@ class Game {
     }
 
     /** Полный сброс (R) */
-    restart() {
-        this._init();
+    async restart() {
+        await this._init();
     }
 
     /**
