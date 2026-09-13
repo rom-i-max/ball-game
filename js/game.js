@@ -269,6 +269,7 @@ class Game {
     }
 
     _levelComplete() {
+        this.gameOver = true;
         this._showOverlay(
             'Уровень пройден!',
             `Очки: ${this.score} · Убито врагов: ${this.kills}. Нажмите R для нового запуска`
