@@ -91,6 +91,14 @@
       "top": "#8b5a2b",
       "body": "#6b4226",
       "highlight": "#a67c52"
+    },
+    "objects": {
+      "crate": "#8B4513",
+      "crateDark": "#5D2906",
+      "barrel": "#A0522D",
+      "barrelRing": "#4a4a4a",
+      "switchOn": "#4CAF50",
+      "switchOff": "#757575"
     }
   }
 }

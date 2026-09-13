@@ -84,6 +84,28 @@ class TerrainGenerator {
         for (const w of this.waves) {
             offset += Math.sin(x * w.freq + w.phase) * w.amp;
         }
+        
+        // Плавный переход к прямым участкам: интерполяция на границах
+        const transitionZone = 60; // зона плавного перехода
+        for (const section of this.flatSections) {
+            // Левая граница перехода
+            if (x > section.startX - transitionZone && x < section.startX) {
+                const t = (x - (section.startX - transitionZone)) / transitionZone;
+                const smoothT = t * t * (3 - 2 * t); // smoothstep
+                const waveY = this.baseLevel - offset;
+                const flatY = this.baseLevel - section.heightOffset;
+                return waveY + (flatY - waveY) * smoothT;
+            }
+            // Правая граница перехода
+            if (x > section.endX && x < section.endX + transitionZone) {
+                const t = (x - section.endX) / transitionZone;
+                const smoothT = t * t * (3 - 2 * t); // smoothstep
+                const flatY = this.baseLevel - section.heightOffset;
+                const waveY = this.baseLevel - offset;
+                return flatY + (waveY - flatY) * smoothT;
+            }
+        }
+        
         return this.baseLevel - offset;
     }
 

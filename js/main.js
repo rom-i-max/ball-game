@@ -20,7 +20,7 @@
 
         // 3) Цикл
         let lastTime = performance.now();
-        function loop(now) {
+        async function loop(now) {
             let dt = (now - lastTime) / (1000 / 60);
             lastTime = now;
             if (dt > 3) dt = 3;

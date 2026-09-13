@@ -61,11 +61,50 @@
             terrainBaseLevel: 480,
             startZoneWidth: 900,
             minChunkWidth: 600,
-            maxChunkWidth: 900
+            maxChunkWidth: 900,
+            levelLength: 5000
         },
         camera: {
             playerOffsetX: 300,
             lerp: 0.1
+        },
+        colors: {
+            sky: {
+                top: "#1b3a6b",
+                mid: "#5fa8dc",
+                bottom: "#b9e2f2"
+            },
+            sun: {
+                glowInner: "rgba(255, 245, 180, 0.95)",
+                glowOuter: "rgba(255, 220, 120, 0.55)",
+                glowTransparent: "rgba(255, 220, 120, 0)",
+                coreInner: "#fffbe6",
+                coreOuter: "#ffd166"
+            },
+            terrain: {
+                grassTop: "#6bcf7f",
+                grassLayer: "#3fa34d",
+                soilTop: "#7a4a2b",
+                soilDeep: "#4a2c19"
+            },
+            shadow: {
+                color: "rgba(0, 0, 0, 0.25)",
+                blurBase: 4,
+                blurMax: 15
+            },
+            platform: {
+                top: "#8b5a2b",
+                body: "#6b4226",
+                highlight: "#a67c52"
+            },
+            objects: {
+                crate: "#8B4513",
+                crateDark: "#5D2906",
+                barrel: "#A0522D",
+                barrelRing: "#4a4a4a",
+                switchOn: "#4CAF50",
+                switchOff: "#757575"
+            }
         }
     };
 

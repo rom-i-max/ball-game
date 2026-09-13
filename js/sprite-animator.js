@@ -121,8 +121,11 @@ class SpriteAnimator {
             return;
         }
 
-        const drawWidth = frame.width * scaleX;
-        const drawHeight = frame.height;
+        // Масштабируем спрайт относительно стандартного размера игрока (40x40)
+        const targetSize = 40;
+        const scale = targetSize / Math.max(frame.width, frame.height);
+        const drawWidth = frame.width * scale * scaleX;
+        const drawHeight = frame.height * scale;
 
         ctx.save();
         

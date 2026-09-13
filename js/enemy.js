@@ -4,34 +4,18 @@
 class Enemy extends Entity {
     /**
      * @param {number} x
+     * @param {number} y
      * @param {number} patrolRange
      * @param {TerrainGenerator} terrain
-    
-	конструктор врага версия 1.0
-	
-    constructor(x, patrolRange, terrain) {
-        const w = 40;
-        const h = 40;
-        super(x - w / 2, 0, w, h);
-        this.terrain = terrain;
-        this.startX = x;
-        this.patrolRange = patrolRange;
-        this.speed = 1.2;
-        this.direction = Math.random() < 0.5 ? 1 : -1;
-        this.alive = true;
-        this.bobPhase = Math.random() * Math.PI * 2;
-
-        // Встаём на землю
-        this._snapToGround();
-    }
-*/
-	
-    constructor(x, patrolRange, terrain) {
+     * @param {Platform[]} platforms
+     */
+    constructor(x, y, patrolRange, terrain, platforms = []) {
         const cfg = (window.CONFIG && window.CONFIG.enemy) || {};
         const w = cfg.width ?? 40;
         const h = cfg.height ?? 40;
-        super(x - w / 2, 0, w, h);
+        super(x - w / 2, y - h, w, h);
         this.terrain = terrain;
+        this.platforms = platforms;
         this.startX = x;
         this.patrolRange = patrolRange ?? cfg.patrolRange ?? 90;
         this.speed = cfg.speed ?? 1.2;
@@ -39,11 +23,21 @@ class Enemy extends Entity {
         this.alive = true;
         this.bobPhase = Math.random() * Math.PI * 2;
 
+        // Встаём на землю или платформу
         this._snapToGround();
-    }	
+    }
 
     _snapToGround() {
-        const groundY = this.terrain.getHeightAt(this.centerX);
+        let groundY = this.terrain.getHeightAt(this.centerX);
+        
+        // Проверяем платформы
+        for (const p of this.platforms) {
+            if (this.centerX >= p.x && this.centerX <= p.x + p.width &&
+                this.bottom <= p.y + 10 && this.bottom > p.y - 50) {
+                groundY = Math.min(groundY, p.y);
+            }
+        }
+        
         this.y = groundY - this.height;
     }
 
